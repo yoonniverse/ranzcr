@@ -50,20 +50,21 @@ def infer(cfg):
     loader = get_loader(paths, cfg, mode='test', distributed=False)
 
     # infer
+    weights = cfg.weights.split('-')
     preds = []
     with torch.no_grad():
         for data in tqdm(loader):
             batch_preds = []
-            for model in models:
+            for model, weight in zip(models, weights):
                 x = data['img'].to(device)
                 orig_cls_pred, orig_seg_pred, supcon_feats = model(x)
                 # flipped_cls_pred, flipped_seg_pred = model(x.flip(-1))
                 # cls_pred = (orig_cls_pred + flipped_cls_pred) / 2
                 # batch_preds.append(cls_pred.cpu().numpy())
-                batch_preds.append(orig_cls_pred.cpu().numpy())
-            batch_preds = np.mean(batch_preds, axis=0)
+                batch_preds.append(orig_cls_pred*float(weight))
+            batch_preds = torch.sum(torch.stack(batch_preds, dim=0), dim=0)
             preds.append(batch_preds)
-    preds = sigmoid(np.concatenate(preds, axis=0))
+    preds = torch.sigmoid(torch.cat(preds, dim=0)).cpu().numpy()
     return uids, preds
 
 
@@ -82,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('--folds_path', type=str, default='folds.jl')
     parser.add_argument('--train_df_path', type=str, default='../../input/kaggle/train.csv')
     parser.add_argument('--dataparallel', type=int, default=0)
+    parser.add_argument('--weights', type=str)
     args = parser.parse_args()
 
     cfg = CFG(vars(args))

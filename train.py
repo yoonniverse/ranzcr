@@ -36,7 +36,7 @@ def main_worker(rank, world_size, cfg):
     cfg.num_workers = cfg.num_workers // world_size
 
     # for reproduciblity
-    make_reproducible(cfg.seed)
+    make_reproducible(42) if cfg.resume else make_reproducible(cfg.seed)
 
     # create logdir
     mkdir(cfg.logdir)
@@ -104,13 +104,25 @@ def main_worker(rank, world_size, cfg):
             print(model.load_state_dict(checkpoint['model'], strict=False))
             print(f'Loaded Pretrained Weights from {cfg.pretrained_path}')
 
-    best_val_metric = -np.inf
+    if cfg.resume:
+        checkpoint = torch.load(os.path.join(cfg.logdir, 'last.pth'), map_location='cpu')
+        start_epoch = checkpoint['epoch'] + 1
+        model.load_state_dict(checkpoint['model'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        scheduler.load_state_dict(checkpoint['scheduler'])
+        best_val_metric = torch.load(os.path.join(cfg.logdir, 'best.pth'), map_location='cpu')['val_metric']
+        amp_scaler.load_state_dict(checkpoint['amp_scaler'])
+        if rank == 0: print(f'Resume from {cfg.logdir}/last.pth. Best val metric: {best_val_metric}')
+    else:
+        start_epoch = 0
+        best_val_metric = -np.inf
+
     model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     model = DDP(model, device_ids=[rank], find_unused_parameters=True)
 
     t0 = time()
     # loop
-    for epoch in range(cfg.epochs):
+    for epoch in range(start_epoch, cfg.epochs):
 
         t00 = time()
 
@@ -294,6 +306,7 @@ if __name__ == '__main__':
     parser.add_argument('--supcon', type=int, default=0)
     parser.add_argument('--pseudo_data_dir', type=str)
     parser.add_argument('--downconv', type=int, default=1)
+    parser.add_argument('--resume', type=int, default=0)
     args = parser.parse_args()
     args.amp = bool(args.amp)
     cfg = CFG(vars(args))

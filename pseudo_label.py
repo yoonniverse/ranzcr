@@ -38,6 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('--resolution', type=int)
     parser.add_argument('--fold', type=int)
     parser.add_argument('--dataparallel', type=int, default=1)
+    parser.add_argument('--weights', type=str)
     args = parser.parse_args()
 
     cfg = CFG(vars(args))
