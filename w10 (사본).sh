@@ -1,1 +1,0 @@
-python train.py --data_dir /home/vnfmadl97/data/processed/data --logdir ../../model/v25/stage1/b5-fold2 --fold 2 --batch_size 16 --lr 3e-4 --epochs 6 --encoder timm-efficientnet-b5 --resolution 2048 --num_workers 30 --pseudo_data_dir /home/vnfmadl97/data/processed/nihchest --seed 7 --pretrained_path ../../model/v25/tube/b5-fold2/best.pth
