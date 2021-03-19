@@ -1,0 +1,2 @@
+python train.py --data_dir /home/vnfmadl97/data/processed/data --logdir ../../model/v25/tube/b6-fold2 --fold 2 --batch_size 12 --lr 4e-4 --epochs 15 --encoder timm-efficientnet-b6 --resolution 2048 --num_workers 60 --seg_pretrain 1 --seed 62 --resume 1
+python train.py --data_dir /home/vnfmadl97/data/processed/data --logdir ../../model/v25/tube/b6-fold3 --fold 3 --batch_size 12 --lr 4e-4 --epochs 15 --encoder timm-efficientnet-b6 --resolution 2048 --num_workers 60 --seg_pretrain 1 --seed 63 --resume 1
